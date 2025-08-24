@@ -1,0 +1,14 @@
+#cron_schedule: 0 0 * * *
+
+target:
+  topic: release2ntfy_test
+  #base_url: https://ntfy.sh
+  #no_verify: false
+
+events:
+  - id: forgejo_runner
+    template: gitea_release
+    url: https://code.forgejo.org/forgejo/runner
+
+#env:
+#  EXAMPLE_VAR: example value

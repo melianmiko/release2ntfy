@@ -1,0 +1,6 @@
+services:
+  app:
+    image: release2ntfy:latest
+    build: .
+    volumes:
+      - ./data:/app/data
