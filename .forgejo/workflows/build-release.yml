@@ -6,39 +6,25 @@ on:
 
 jobs:
   release:
-    runs-on: docker
-    services:
-      docker:
-        image: git.near.srv/core/dind-no-tls:latest
-        options: >-
-          --privileged
-        env:
-          DOCKER_TLS_CERTDIR: ""
+    runs-on: host
     steps:
       - uses: actions/checkout@v4
-      - name: Log in to registry
-        run: |
-          echo "${{ secrets.GIT_ACCESS_TOKEN }}" | docker login -u owner --password-stdin ${{ env.FORGEJO_SERVER_URL }}
       - name: Build and publish docker image
         env:
           IMAGE_NAME: "${{ vars.FORGEJO_SERVER_HOST }}/owner/release2ntfy"
         run: |
           IMAGE_VERSION="0.1-`date '+%Y%m%d'`"
-          docker build -t "${{ env.IMAGE_NAME }}:$IMAGE_VERSION" .
-          docker push ${{ env.IMAGE_NAME }}:$IMAGE_VERSION
+          docker build --progress=plain -t "${{ env.IMAGE_NAME }}:$IMAGE_VERSION" .
+          docker push -q ${{ env.IMAGE_NAME }}:$IMAGE_VERSION
 
   deploy:
-    runs-on: docker
+    runs-on: host
     needs:
       - release
-    if: secrets.DEPLOY_SSH_KEY != ''
     steps:
       - name: Run deploy script on remote host
         run: |
           IMAGE_VERSION="0.1-`date '+%Y%m%d'`"
-          mkdir -p ~/.ssh
-          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
-          ssh -o StrictHostKeychecking=no \
-            cicd@${{ vars.PROD_HOST }} \
+          ssh cicd@${{ vars.PROD_HOST }} \
             ${{ vars.PROD_DEPLOY_CMD }} release2ntfy $IMAGE_VERSION
+
