@@ -15,7 +15,9 @@ jobs:
         run: |
           IMAGE_VERSION="0.1-`date '+%Y%m%d'`"
           docker build --progress=plain -t "${{ env.IMAGE_NAME }}:$IMAGE_VERSION" .
+          docker tag ${{ env.IMAGE_NAME }}:$IMAGE_VERSION ${{ env.IMAGE_NAME }}:latest
           docker push -q ${{ env.IMAGE_NAME }}:$IMAGE_VERSION
+          docker push -q ${{ env.IMAGE_NAME }}:latest
 
   deploy:
     runs-on: host
