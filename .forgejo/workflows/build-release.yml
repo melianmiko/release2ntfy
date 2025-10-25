@@ -4,18 +4,23 @@ on:
     branches:
       - master
 
+env:
+  IMAGE_NAME: "${{ vars.FORGEJO_SERVER_HOST }}/owner/release2ntfy"
+
 jobs:
   release:
     runs-on: host
     steps:
       - uses: actions/checkout@v4
       - name: Build and publish docker image
-        env:
-          IMAGE_NAME: "${{ vars.FORGEJO_SERVER_HOST }}/owner/release2ntfy"
         run: |
           IMAGE_VERSION="0.1-`date '+%Y%m%d'`"
-          docker build --progress=plain -t "${{ env.IMAGE_NAME }}:$IMAGE_VERSION" .
-          docker tag ${{ env.IMAGE_NAME }}:$IMAGE_VERSION ${{ env.IMAGE_NAME }}:latest
+          docker build \
+            --progress=plain \
+            -t "${{ env.IMAGE_NAME }}:$IMAGE_VERSION" \
+            -t "${{ env.IMAGE_NAME }}:latest" \
+            --build-arg APP_IMAGE_VERSION=$IMAGE_VERSION \
+            .
           docker push -q ${{ env.IMAGE_NAME }}:$IMAGE_VERSION
           docker push -q ${{ env.IMAGE_NAME }}:latest
 
@@ -26,7 +31,4 @@ jobs:
     steps:
       - name: Run deploy script on remote host
         run: |
-          IMAGE_VERSION="0.1-`date '+%Y%m%d'`"
-          ssh cicd@${{ vars.PROD_HOST }} \
-            ${{ vars.PROD_DEPLOY_CMD }} release2ntfy $IMAGE_VERSION
-
+          curl -d "${{ env.IMAGE_NAME }}:latest" ${{ vars.DEPLOYHOOK_PUBLICSRV }}
